@@ -1,0 +1,14 @@
+backend/.env
+backend/vendor/
+backend/storage/logs/*
+backend/database/*.sqlite
+frontend/.env
+frontend/node_modules/
+frontend/dist/
+.env
+.env.*
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+.vscode/
+.idea/
