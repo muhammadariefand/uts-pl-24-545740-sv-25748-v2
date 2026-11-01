@@ -145,6 +145,76 @@ docker compose logs backend
 Log harus memuat informasi seperti `FrankenPHP started` dan `Caddy serving PHP
 app on :8000`.
 
+## Log terstruktur dan endpoint kesehatan
+
+Laravel mengirim log aplikasi dalam format JSON ke `stdout`, sehingga log
+tersedia langsung melalui Docker:
+
+```powershell
+docker compose logs -f backend
+```
+
+Event penting yang dicatat antara lain:
+
+- `auth.login.success`: pengguna yang berhasil login.
+- `auth.login.failed`: email dan alasan login gagal.
+- `transaction.created`: pengguna, transaksi, tipe, jumlah, dan tanggal.
+- `transaction.updated` dan `transaction.deleted`: pengguna dan transaksi yang
+  diubah atau dihapus.
+- `transaction.validation_failed`: pengguna, aksi, alasan, dan field yang
+  tidak valid.
+- `health.database_failed` dan `health.cache_failed`: komponen dependency dan
+  alasan kegagalannya.
+
+Password dan token tidak pernah ditulis ke log.
+
+Endpoint kesehatan:
+
+```powershell
+curl.exe -i http://localhost:8000/health
+```
+
+Endpoint melakukan query `SELECT 1` ke database dan operasi tulis-baca-hapus
+ke cache. Jika keduanya tersedia, responsnya `200`:
+
+```json
+{
+  "status": "healthy",
+  "checks": {
+    "database": {"status": "up"},
+    "cache": {"status": "up"}
+  }
+}
+```
+
+Jika database atau cache gagal, responsnya `503` dan status menjadi
+`unhealthy`. Healthcheck service backend di Compose memanggil endpoint ini,
+bukan hanya memeriksa port:
+
+```powershell
+docker compose ps
+docker compose stop db
+Start-Sleep -Seconds 40
+docker compose ps
+docker compose logs --tail=100 backend
+```
+
+Saat database dihentikan, backend berubah menjadi `Up (unhealthy)` dan log
+memuat `health.database_failed`. Setelah database dipulihkan dengan
+`docker compose start db`, status kembali `healthy`.
+
+Semua service menggunakan rotasi log Docker:
+
+```yaml
+logging:
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+```
+
+Artinya Docker menyimpan paling banyak tiga file log dengan ukuran masing-masing
+10 MB per service.
 ## Menjalankan backend secara lokal
 
 ```powershell
