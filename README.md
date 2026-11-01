@@ -215,7 +215,6 @@ logging:
 
 Artinya Docker menyimpan paling banyak tiga file log dengan ukuran masing-masing
 10 MB per service.
-
 ## Menjalankan backend secara lokal
 
 ```powershell
